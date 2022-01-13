@@ -33,7 +33,7 @@ class EmbeddingBlock(nn.Module):
 
 class Embedding(nn.Module):
 
-    def __init__(self, depth=4, kernel_size=16, stride=8, glu=True, res=True):
+    def __init__(self, depth=5, kernel_size=8, stride=4, glu=True, res=True):
         super(Embedding, self).__init__()
         self.embedding = nn.ModuleList()
         for index in range(depth):
@@ -44,12 +44,12 @@ class Embedding(nn.Module):
         for embedding_layer in self.embedding:
             output = embedding_layer(output)
 
-        print(output.shape)
         return output
 
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
-    input = torch.randn((4, 1, 18000))
-    embedding = Embedding()
+    input = torch.randn((4, 1, 16000))
+    embedding = Embedding(depth=6, kernel_size=16, stride=4)
     output = embedding(input)
+    print(output.shape)

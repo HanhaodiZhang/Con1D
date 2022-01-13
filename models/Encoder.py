@@ -2,6 +2,8 @@ import logging
 
 import torch
 import torch.nn as nn
+from torch.nn import init
+
 
 from einops import rearrange, repeat
 from einops.layers.torch import Rearrange
@@ -11,8 +13,8 @@ from models.wav_embedding import Embedding
 
 
 class AuT(nn.Module):
-    def __init__(self, *, sample_rate=36000, time_length=10, embedding_kernel=16, embedding_stride=8, embedding_depth=4,
-                 embedding_glu=True, embedding_res=True, time_step=0.5, num_classes=527, dim=1024, depth=6, heads=16,
+    def __init__(self, *, sample_rate=32000, time_length=10, embedding_kernel=16, embedding_stride=8, embedding_depth=4,
+                 embedding_glu=True, embedding_res=True, time_step=0.5, num_classes=527, dim=1024, depth=12, heads=16,
                  mlp_dim=1024, pool='cls', dim_head=64, dropout=0., emb_dropout=0.):
         super(AuT, self).__init__()
 
@@ -22,7 +24,8 @@ class AuT(nn.Module):
             Rearrange('b (n v) -> (b n) 1 v', v=int(time_step*sample_rate)),
             Embedding(depth=embedding_depth, kernel_size=embedding_kernel, stride=embedding_stride, glu=embedding_glu,
                       res=embedding_res),
-            Rearrange('(b n) c v -> b n (c v)', n=self.num_patches)
+            Rearrange('(b n) c v -> b n (c v)', n=self.num_patches),
+            nn.Linear(1024*4, dim)
         )
         # transformer
         self.pos_embedding = nn.Parameter(torch.randn(1, self.num_patches + 1, dim))
@@ -38,6 +41,17 @@ class AuT(nn.Module):
             nn.LayerNorm(dim),
             nn.Linear(dim, num_classes)
         )
+
+    def init_weight(self):
+        for m in self.modules():
+            if isinstance(m, nn.Conv1d):
+                init.xavier_uniform_(m.weight.data)
+                if m.bias is not None:
+                    init.constant_(m.bias.data, 0.1)
+            elif isinstance(m, nn.Linear):
+                init.normal_(m.weight.data, std=1e-3)
+                if m.bias is not None:
+                    init.constant_(m.bias.data, 0)
 
     def forward(self, wav):
         x = self.to_patch_embedding(wav)
@@ -57,7 +71,7 @@ class AuT(nn.Module):
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
-    input = torch.randn((4, 360000))
-    aut = AuT()
+    input = torch.randn((4, 320000))
+    aut = AuT(embedding_kernel=16, embedding_stride=4, embedding_depth=6,dim=4096,heads=32,dim_head=128, depth=24)
     output = aut(input)
     print(output.shape)
