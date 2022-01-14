@@ -4,9 +4,9 @@ def step_learning_rate(args, epoch, batch_iter, optimizer, train_batch, lr_adj, 
     # https://github.com/pytorch/examples/blob/master/imagenet/main.py
     """
     # total_epochs = args.num_epochs
-    if args.base_lr * lr_adj <5e-8:
+    if args.base_lr * lr_adj <5e-11:
         for param_group in optimizer.param_groups:
-            param_group['lr'] = 5e-8
+            param_group['lr'] = 5e-11
         return 5e-8, lr_adj
     warm_epochs = args.warmup_epochs
     if epoch < warm_epochs:

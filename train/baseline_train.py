@@ -26,10 +26,10 @@ parser.add_argument('--batch_size', type=int, default=128)
 parser.add_argument('--lr_schedule', type=str, default='')
 parser.add_argument('--label_smooth', type=float, default=0.1)
 
-parser.add_argument('--warmup_epochs', type=int, default=3)
+parser.add_argument('--warmup_epochs', type=int, default=2)
 parser.add_argument('--num_epochs', type=int, default=500)
 parser.add_argument('--reduce_n_epoch', type=int, default=10)
-parser.add_argument('--reduce_rate', type=float, default=0.2)
+parser.add_argument('--reduce_rate', type=float, default=0.5)
 
 if __name__ == "__main__":
     opt = parser.parse_args()
@@ -118,7 +118,7 @@ if __name__ == "__main__":
                     scores = np.append(scores, torch.sigmoid(model(wav)).cpu().detach().numpy(), axis=0)
                     targets = np.append(targets, label.cpu().detach().numpy(), axis=0)
 
-            mAP = metrics.average_precision_score(targets, scores)
+            mAP = np.mean(metrics.average_precision_score(targets, scores,average=None))
             writer.add_scalar('val/mAP', mAP, epoch + 1)
 
         avg_loss = total_loss / len(pbar)
